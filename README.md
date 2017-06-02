@@ -1,7 +1,7 @@
 # PresentationCodeFormatter
 
 PresentationCodeFormatter is a Python script, which converts Java files/functions to a text file, which is readable by [Presentation](http://www.neurobs.com/).
-This includes a rough custom syntax highlighting with [Pygments](https://pygments.com).
+This includes a rough custom syntax highlighting with [Pygments](http://pygments.org/).
 
 I personally use this to convert [small code snippets](#TODO) for empirical research on program comprehension (see [Brains on Code](https://github.com/brains-on-code)).
 This means the script is very personalized to my usage, and probably not directly useful to you without changes.
