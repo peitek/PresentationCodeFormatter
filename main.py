@@ -16,6 +16,7 @@ def main():
     output_separated = False
     output_single = {}
     output_single_name = 'AllFunctionsWords'
+    snippet_time = '$TopDownTime'
 
     # read all files from a directory and loop through them
     only_files = [f for f in os.listdir(file_directory) if isfile(join(file_directory, f))]
@@ -25,21 +26,24 @@ def main():
             # only select files with a condition in their name
             conditions = ['LDBO', 'LDBS', 'LOBO', 'LOBS']
             if any(x in file_name for x in conditions):
-                convert_file(file_directory, file_name, output_single, output_separated)
+                convert_file(file_directory, file_name, output_single, output_separated, snippet_time)
         else:
-            convert_file(file_directory, file_name, output_single, output_separated)
+            convert_file(file_directory, file_name, output_single, output_separated, snippet_time)
 
     # if configured, write large output file with everything put together
     if not output_separated:
         all_functions = ''
+        function_calls = ''
 
         for key, value in output_single.items():
             all_functions += value + '\n\n'
+            function_calls += key + '.present();\n'
 
         write_presentation_string_to_file(all_functions, output_single_name)
+        write_presentation_string_to_file(function_calls, output_single_name + "_pclfile")
 
 
-def convert_file(file_directory, file_name, output, output_separated):
+def convert_file(file_directory, file_name, output, output_separated, snippet_time):
     with open(join(file_directory, file_name)) as text_file:
         code_file = text_file.read()
 
@@ -64,16 +68,24 @@ def convert_file(file_directory, file_name, output, output_separated):
 
         code_in_presentation = convert_syntax_highlighting_to_presentation(code_in_html)
 
-        # Put the code with syntax highlighting in the variable framework
+        # Put the code with syntax highlighting in Presentation's variable framework
         full_presentation_string = "#" + function_name + """ 
-                picture {    
-                    text { 
-                        formatted_text = true;
-                        caption = \"<font color='200,200,200'>          equivalent?</font>
+picture {    
+    text { 
+        formatted_text = true;
+        caption = \"<font color='200,200,200'>          equivalent?</font>
                         
                         
-                """ + code_in_presentation + """"\";}; x = $xf; y = $yf;}
-                """ + function_name + ";"
+""" + code_in_presentation + """";}; x = $xf; y = $yf;}
+code_""" + function_name + "; \n\n" + \
+"""
+trial {
+    trial_duration = '""" + snippet_time + """';
+    picture code_""" + function_name + """ ; 
+    time = 0 ; 
+    duration = '$TopDownTime'; 
+    code = \"code_""" + function_name + """\"; 
+} """ + function_name + """;"""
 
         # TODO move all files into an array
 
