@@ -6,6 +6,7 @@ import pygments.lexers as lexers
 import pygments.formatters as formatters
 import pygments.styles as styles
 
+import export_as_image as code_image
 
 def main():
     # TODO let this program be executable from the command line
@@ -14,6 +15,7 @@ def main():
     file_directory = "C:/Users/npeitek/Documents/fmri-td/CodeSnippets/src/com/fmri/topdown/original/words"
     limit_to_files_with_condition = True
     output_separated = False
+    create_code_images = True
     output_single = {}
     output_single_name = 'AllFunctionsWords'
     snippet_time = '$TopDownTime'
@@ -26,9 +28,9 @@ def main():
             # only select files with a condition in their name
             conditions = ['LDBO', 'LDBS', 'LOBO', 'LOBS']
             if any(x in file_name for x in conditions):
-                convert_file(file_directory, file_name, output_single, output_separated, snippet_time)
+                convert_file(file_directory, file_name, output_single, output_separated, snippet_time, create_code_images)
         else:
-            convert_file(file_directory, file_name, output_single, output_separated, snippet_time)
+            convert_file(file_directory, file_name, output_single, output_separated, snippet_time, create_code_images)
 
     # if configured, write large output file with everything put together
     if not output_separated:
@@ -43,7 +45,7 @@ def main():
         write_presentation_string_to_file(function_calls, output_single_name + "_pclfile")
 
 
-def convert_file(file_directory, file_name, output, output_separated, snippet_time):
+def convert_file(file_directory, file_name, output, output_separated, snippet_time, create_code_images = False):
     with open(join(file_directory, file_name)) as text_file:
         code_file = text_file.read()
 
@@ -67,6 +69,9 @@ def convert_file(file_directory, file_name, output, output_separated, snippet_ti
         code_in_html = create_syntax_highlighting_html(code_function_string)
 
         code_in_presentation = convert_syntax_highlighting_to_presentation(code_in_html)
+
+        if create_code_images:
+            code_image.getImage(function_name, code_function_string)
 
         # Put the code with syntax highlighting in Presentation's variable framework
         full_presentation_string = "#" + function_name + """ 
