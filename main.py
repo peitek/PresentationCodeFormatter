@@ -50,7 +50,7 @@ def convert_file(file_directory, file_name, output, output_separated, snippet_ti
         code_file = text_file.read()
 
         # extract Java function from code file
-        code_function_start, code_function_string = extract_function_from_file(code_file)
+        code_function_start, code_function_string, code_task = extract_function_from_file(code_file)
 
         # get name of the function to specify the Presentation code block
         # TODO figure out unscrambled function name
@@ -71,7 +71,7 @@ def convert_file(file_directory, file_name, output, output_separated, snippet_ti
         code_in_presentation = convert_syntax_highlighting_to_presentation(code_in_html)
 
         if create_code_images:
-            code_image.getImage(function_name, code_function_string)
+            code_image.getImage(function_name, code_function_string, code_task)
 
         # Put the code with syntax highlighting in Presentation's variable framework
         full_presentation_string = "#" + function_name + """ 
@@ -110,6 +110,15 @@ def extract_function_from_file(code_file):
     if not code_function_start:
         raise Exception('no function found')
 
+    code_task_position = code_file.find("[TASK]")
+
+    if code_task_position != -1:
+        code_task_string = code_file[code_task_position + 7:]
+        code_task_end = code_task_string.find("\n")
+        code_task_string = code_task_string[:code_task_end]
+    else:
+        code_task_string = ""
+
     code_function_position = code_file.find(code_function_start)
     code_function_string = code_file[code_function_position:]
     number_of_open_curly_brackets = 0
@@ -124,7 +133,7 @@ def extract_function_from_file(code_file):
                 code_function_end = i
                 break
     code_function_string = code_function_string[:code_function_end + 1]
-    return code_function_start, code_function_string
+    return code_function_start, code_function_string, code_task_string
 
 
 def create_syntax_highlighting_html(code_function_string):

@@ -10,6 +10,8 @@ import pygments.lexers as lexers
 import pygments.formatters as formatters
 import pygments.styles as styles
 
+FONT_COLOR_INSTRUCTION = (200, 200, 200)
+
 
 def main():
     code = """
@@ -34,14 +36,20 @@ public boolean containsSubstring(String word, String substring) {
     getImage("test123", code)
 
 
-def getImage(function_name, code):
+def getImage(function_name, code, code_task):
     print("creating image for " + function_name)
     fullSizeX = 1920
     fullSizeY = 1080
     image = Image.new("RGBA", (fullSizeX, fullSizeY), (0,0,0))
+    draw = ImageDraw.Draw(image)
 
     inconsolata = ImageFont.truetype("resources/Inconsolata-Regular.ttf", 32)
 
+    # draw instructions for code task
+    (instruction_width, instruction_height) = ImageDraw.ImageDraw(image).textsize(text=code_task, font=inconsolata)
+    draw.text((fullSizeX/2 - instruction_width/2, (fullSizeY / 20)), code_task, FONT_COLOR_INSTRUCTION, font=inconsolata)
+
+    # draw code
     code_in_html = create_syntax_highlighting_html(code)
     code_in_html = html.unescape(code_in_html)
     code_in_html = code_in_html.replace("<span></span>", "")
@@ -49,7 +57,6 @@ def getImage(function_name, code):
     (allTextSizeX, allTextSizeY) = ImageDraw.ImageDraw(image).multiline_textsize(text=code, font=inconsolata)
     allTextSizeY *= 1.4 #for additional vertical padding, otherwise the text is too hard to read
 
-    draw = ImageDraw.Draw(image)
     xPosStart = (fullSizeX/2) - (allTextSizeX/2)
     yPos = (fullSizeY/2) - (allTextSizeY/2)
     (nil, verticalPadding) = ImageDraw.ImageDraw(image).textsize(text="blubb", font=inconsolata)
