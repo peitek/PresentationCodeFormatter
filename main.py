@@ -8,12 +8,13 @@ import pygments.styles as styles
 
 import export_as_image as code_image
 
+
 def main():
     # TODO let this program be executable from the command line
     # TODO make config accessible from outside
     # config
-    file_directory = "C:/Users/npeitek/Documents/fmri-td/CodeSnippets/src/com/fmri/topdown/original/words"
-    limit_to_files_with_condition = True
+    file_directory = "C:/Users/npeitek/Documents/fmri-td/CodeSnippets/src/com/fmri/topdown/original/number"
+    limit_to_files_with_condition = False
     output_separated = False
     create_code_images = True
     output_single = {}
@@ -26,7 +27,7 @@ def main():
     for file_name in only_files:
         if limit_to_files_with_condition:
             # only select files with a condition in their name
-            conditions = ['LDBO', 'LDBS', 'LOBO', 'LOBS']
+            conditions = ['BU', 'LOBO', 'LOBS']
             if any(x in file_name for x in conditions):
                 convert_file(file_directory, file_name, output_single, output_separated, snippet_time, create_code_images)
         else:
@@ -50,7 +51,10 @@ def convert_file(file_directory, file_name, output, output_separated, snippet_ti
         code_file = text_file.read()
 
         # extract Java function from code file
-        code_function_start, code_function_string, code_task = extract_function_from_file(code_file)
+        try:
+            code_function_start, code_function_string, code_task = extract_function_from_file(code_file)
+        except Exception:
+            return
 
         # get name of the function to specify the Presentation code block
         # TODO figure out unscrambled function name
@@ -61,10 +65,16 @@ def convert_file(file_directory, file_name, output, output_separated, snippet_ti
         # remove conditions (LDBO, ..) from function name
         # TODO limit it to the function name to prevent bugs
         code_function_string = code_function_string \
+            .replace('TD_B', '') \
+            .replace('TD_N', '') \
+            .replace('TD_U', '') \
             .replace('LDBO', '') \
             .replace('LDBS', '') \
             .replace('LOBO', '') \
-            .replace('LOBS', '')
+            .replace('LOBS', '') \
+            .replace('BU', '') \
+            .replace('TD', '') \
+            .replace('SY', '')
 
         code_in_html = create_syntax_highlighting_html(code_function_string)
 
@@ -103,7 +113,7 @@ trial {
 
 def extract_function_from_file(code_file):
     # TODO support multiple functions for each file
-    code_function_start_lookups = ['public int ', 'public String ', 'public boolean ']
+    code_function_start_lookups = ['public int ', 'public String ', 'public Integer ', 'public float ', 'public boolean ', 'public double[] ', 'public int[] ']
 
     code_function_start = next((x for x in code_function_start_lookups if x in code_file), False)
 
@@ -124,10 +134,10 @@ def extract_function_from_file(code_file):
     number_of_open_curly_brackets = 0
     code_function_end = -1
     for i, c in enumerate(code_function_string):
-        if (c == "{"):
+        if c == "{":
             number_of_open_curly_brackets += 1
 
-        if (c == "}"):
+        if c == "}":
             number_of_open_curly_brackets -= 1
             if (number_of_open_curly_brackets <= 0):
                 code_function_end = i

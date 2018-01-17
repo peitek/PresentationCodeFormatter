@@ -1,3 +1,4 @@
+import PIL
 from PIL import Image, ImageDraw, ImageFont
 
 import html
@@ -38,8 +39,8 @@ public boolean containsSubstring(String word, String substring) {
 
 def getImage(function_name, code, code_task):
     print("creating image for " + function_name)
-    fullSizeX = 1920
-    fullSizeY = 1080
+    fullSizeX = 1280 #1920
+    fullSizeY = 1024 #1080
     image = Image.new("RGBA", (fullSizeX, fullSizeY), (0,0,0))
     draw = ImageDraw.Draw(image)
 
@@ -52,6 +53,7 @@ def getImage(function_name, code, code_task):
     # draw code
     code_in_html = create_syntax_highlighting_html(code)
     code_in_html = html.unescape(code_in_html)
+    code_in_html = code_in_html.replace('\t', '    ')
     code_in_html = code_in_html.replace("<span></span>", "")
 
     (allTextSizeX, allTextSizeY) = ImageDraw.ImageDraw(image).multiline_textsize(text=code, font=inconsolata)
@@ -66,6 +68,10 @@ def getImage(function_name, code, code_task):
     for code_line in code_in_html_lines:
         if code_line == "</pre></div>":
             break
+
+        # remove four first characters from each line to offset the incorrect indentation
+        if code_line.startswith('    '):
+            code_line = code_line[4:]
 
         code_elements = code_line.split("<span")
 
@@ -95,7 +101,10 @@ def write_image_to_file(file_name, image):
         os.mkdir(subdirectory)
     except Exception:
         pass
-    image.save(join(subdirectory, 'Output_' + file_name + '.png'), "PNG")
+
+    #image.thumbnail((1280, 1024), PIL.Image.ANTIALIAS)
+    #image.save(join(subdirectory, file_name + '_resized.png'), "PNG")
+    image.save(join(subdirectory, file_name + '.png'), "PNG")
 
 
 def get_color_for_span_class(span_class):
