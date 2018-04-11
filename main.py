@@ -6,8 +6,6 @@ import pygments.lexers as lexers
 import pygments.formatters as formatters
 import pygments.styles as styles
 
-import export_as_image as code_image
-
 
 def main():
     # TODO let this program be executable from the command line
@@ -16,7 +14,6 @@ def main():
     file_directory = "C:/Users/npeitek/Documents/fmri-td/CodeSnippets/src/com/fmri/topdown/original/number"
     limit_to_files_with_condition = False
     output_separated = False
-    create_code_images = True
     output_single = {}
     output_single_name = 'AllFunctionsWords'
     snippet_time = '$TopDownTime'
@@ -29,9 +26,9 @@ def main():
             # only select files with a condition in their name
             conditions = ['BU', 'LOBO', 'LOBS']
             if any(x in file_name for x in conditions):
-                convert_file(file_directory, file_name, output_single, output_separated, snippet_time, create_code_images)
+                convert_file(file_directory, file_name, output_single, output_separated, snippet_time)
         else:
-            convert_file(file_directory, file_name, output_single, output_separated, snippet_time, create_code_images)
+            convert_file(file_directory, file_name, output_single, output_separated, snippet_time)
 
     # if configured, write large output file with everything put together
     if not output_separated:
@@ -46,7 +43,7 @@ def main():
         write_presentation_string_to_file(function_calls, output_single_name + "_pclfile")
 
 
-def convert_file(file_directory, file_name, output, output_separated, snippet_time, create_code_images = False):
+def convert_file(file_directory, file_name, output, output_separated, snippet_time):
     with open(join(file_directory, file_name)) as text_file:
         code_file = text_file.read()
 
@@ -79,9 +76,6 @@ def convert_file(file_directory, file_name, output, output_separated, snippet_ti
         code_in_html = create_syntax_highlighting_html(code_function_string)
 
         code_in_presentation = convert_syntax_highlighting_to_presentation(code_in_html)
-
-        if create_code_images:
-            code_image.getImage(function_name, code_function_string, code_task)
 
         # Put the code with syntax highlighting in Presentation's variable framework
         full_presentation_string = "#" + function_name + """ 
@@ -152,8 +146,10 @@ def create_syntax_highlighting_html(code_function_string):
     formatter.full = True
     formatter.style = styles.get_style_by_name("manni")
     lexer = lexers.get_lexer_by_name('Java')
+
     # Use pygments to create code with syntax highlighting in HTML
     code_in_html = pygments.highlight(code_function_string, lexer, formatter)
+
     # Convert syntax highlighting from HTML to the Presentation-format
     code_in_presentation = code_in_html
     pos = code_in_html.find("<pre>")

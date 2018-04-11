@@ -1,5 +1,10 @@
 # Changelog #
 
+## 0.2.1 (2018-04-11)
+
+* Move image generator to its [own repository](https://github.com/peitek/CodeImageGenerator)
+* Deprecate this repository
+
 ## 0.2.0 (2017-11-17)
 
 * Add experimental option to export code with syntax highlighting as PNG image
