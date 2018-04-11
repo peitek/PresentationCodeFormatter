@@ -11,11 +11,12 @@ def main():
     # TODO let this program be executable from the command line
     # TODO make config accessible from outside
     # config
-    file_directory = "C:/Users/npeitek/Documents/fmri-td/CodeSnippets/src/com/fmri/topdown/original/words"
-    limit_to_files_with_condition = True
+    file_directory = "C:/Users/npeitek/Documents/fmri-td/CodeSnippets/src/com/fmri/topdown/original/number"
+    limit_to_files_with_condition = False
     output_separated = False
     output_single = {}
     output_single_name = 'AllFunctionsWords'
+    snippet_time = '$TopDownTime'
 
     # read all files from a directory and loop through them
     only_files = [f for f in os.listdir(file_directory) if isfile(join(file_directory, f))]
@@ -23,28 +24,34 @@ def main():
     for file_name in only_files:
         if limit_to_files_with_condition:
             # only select files with a condition in their name
-            conditions = ['LDBO', 'LDBS', 'LOBO', 'LOBS']
+            conditions = ['BU', 'LOBO', 'LOBS']
             if any(x in file_name for x in conditions):
-                convert_file(file_directory, file_name, output_single, output_separated)
+                convert_file(file_directory, file_name, output_single, output_separated, snippet_time)
         else:
-            convert_file(file_directory, file_name, output_single, output_separated)
+            convert_file(file_directory, file_name, output_single, output_separated, snippet_time)
 
     # if configured, write large output file with everything put together
     if not output_separated:
         all_functions = ''
+        function_calls = ''
 
         for key, value in output_single.items():
             all_functions += value + '\n\n'
+            function_calls += key + '.present();\n'
 
         write_presentation_string_to_file(all_functions, output_single_name)
+        write_presentation_string_to_file(function_calls, output_single_name + "_pclfile")
 
 
-def convert_file(file_directory, file_name, output, output_separated):
+def convert_file(file_directory, file_name, output, output_separated, snippet_time):
     with open(join(file_directory, file_name)) as text_file:
         code_file = text_file.read()
 
         # extract Java function from code file
-        code_function_start, code_function_string = extract_function_from_file(code_file)
+        try:
+            code_function_start, code_function_string, code_task = extract_function_from_file(code_file)
+        except Exception:
+            return
 
         # get name of the function to specify the Presentation code block
         # TODO figure out unscrambled function name
@@ -55,25 +62,39 @@ def convert_file(file_directory, file_name, output, output_separated):
         # remove conditions (LDBO, ..) from function name
         # TODO limit it to the function name to prevent bugs
         code_function_string = code_function_string \
+            .replace('TD_B', '') \
+            .replace('TD_N', '') \
+            .replace('TD_U', '') \
             .replace('LDBO', '') \
             .replace('LDBS', '') \
             .replace('LOBO', '') \
-            .replace('LOBS', '')
+            .replace('LOBS', '') \
+            .replace('BU', '') \
+            .replace('TD', '') \
+            .replace('SY', '')
 
         code_in_html = create_syntax_highlighting_html(code_function_string)
 
         code_in_presentation = convert_syntax_highlighting_to_presentation(code_in_html)
 
-        # Put the code with syntax highlighting in the variable framework
+        # Put the code with syntax highlighting in Presentation's variable framework
         full_presentation_string = "#" + function_name + """ 
-                picture {    
-                    text { 
-                        formatted_text = true;
-                        caption = \"<font color='200,200,200'>          equivalent?</font>
+picture {    
+    text { 
+        formatted_text = true;
+        caption = \"<font color='200,200,200'>          equivalent?</font>
                         
                         
-                """ + code_in_presentation + """"\";}; x = $xf; y = $yf;}
-                """ + function_name + ";"
+""" + code_in_presentation + """";}; x = $xf; y = $yf;}
+code_""" + function_name + "; \n\n" + \
+"""
+trial {
+    trial_duration = '""" + snippet_time + """';
+    picture code_""" + function_name + """ ; 
+    time = 0 ; 
+    duration = '$TopDownTime'; 
+    code = \"code_""" + function_name + """\"; 
+} """ + function_name + """;"""
 
         # TODO move all files into an array
 
@@ -86,28 +107,37 @@ def convert_file(file_directory, file_name, output, output_separated):
 
 def extract_function_from_file(code_file):
     # TODO support multiple functions for each file
-    code_function_start_lookups = ['public int ', 'public String ', 'public boolean ']
+    code_function_start_lookups = ['public int ', 'public String ', 'public Integer ', 'public float ', 'public boolean ', 'public double[] ', 'public int[] ']
 
     code_function_start = next((x for x in code_function_start_lookups if x in code_file), False)
 
     if not code_function_start:
         raise Exception('no function found')
 
+    code_task_position = code_file.find("[TASK]")
+
+    if code_task_position != -1:
+        code_task_string = code_file[code_task_position + 7:]
+        code_task_end = code_task_string.find("\n")
+        code_task_string = code_task_string[:code_task_end]
+    else:
+        code_task_string = ""
+
     code_function_position = code_file.find(code_function_start)
     code_function_string = code_file[code_function_position:]
     number_of_open_curly_brackets = 0
     code_function_end = -1
     for i, c in enumerate(code_function_string):
-        if (c == "{"):
+        if c == "{":
             number_of_open_curly_brackets += 1
 
-        if (c == "}"):
+        if c == "}":
             number_of_open_curly_brackets -= 1
             if (number_of_open_curly_brackets <= 0):
                 code_function_end = i
                 break
     code_function_string = code_function_string[:code_function_end + 1]
-    return code_function_start, code_function_string
+    return code_function_start, code_function_string, code_task_string
 
 
 def create_syntax_highlighting_html(code_function_string):
@@ -116,8 +146,10 @@ def create_syntax_highlighting_html(code_function_string):
     formatter.full = True
     formatter.style = styles.get_style_by_name("manni")
     lexer = lexers.get_lexer_by_name('Java')
+
     # Use pygments to create code with syntax highlighting in HTML
     code_in_html = pygments.highlight(code_function_string, lexer, formatter)
+
     # Convert syntax highlighting from HTML to the Presentation-format
     code_in_presentation = code_in_html
     pos = code_in_html.find("<pre>")
